@@ -51,7 +51,7 @@ Useful sensor attributes:
 ## Dashboard UI Example
 You can paste this as a manual Lovelace card (`type: vertical-stack`) and adapt entity IDs to your setup.
 
-![Dashboard example](docs/images/ha-dashboard-example.png)
+![Dashboard example](docs/images/ha-dashboard-example-v2.png)
 
 ```yaml
 type: vertical-stack
