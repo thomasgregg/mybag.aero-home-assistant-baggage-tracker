@@ -27,7 +27,7 @@ class MyBagStatusSensor(CoordinatorEntity[MyBagDataUpdateCoordinator], SensorEnt
 
     _attr_has_entity_name = True
     _attr_name = "Status"
-    _attr_icon = "mdi:bag-suitcase"
+    _attr_icon = "mdi:bag-checked"
 
     def __init__(self, coordinator: MyBagDataUpdateCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator)
