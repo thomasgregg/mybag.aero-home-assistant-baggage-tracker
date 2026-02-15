@@ -1,6 +1,6 @@
 {
   "domain": "mybag_aero_tracker",
-  "name": "Mybag.aero Tracker",
+  "name": "Mybag.aero Baggage Tracker",
   "codeowners": ["@thomasgregg"],
   "config_flow": true,
   "documentation": "https://github.com/thomasgregg/mybag.aero-home-assistant-baggage-tracker",

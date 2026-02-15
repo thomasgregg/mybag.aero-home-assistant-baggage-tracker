@@ -21,7 +21,7 @@ class MyBagDataUpdateCoordinator(DataUpdateCoordinator[BaggageStatus]):
         super().__init__(
             hass,
             _LOGGER,
-            name="MyBag Tracker",
+            name="Mybag.aero Baggage Tracker",
             update_interval=timedelta(minutes=interval_minutes),
         )
         self.client = client

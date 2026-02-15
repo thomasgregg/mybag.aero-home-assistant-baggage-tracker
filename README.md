@@ -1,4 +1,4 @@
-# Mybag.aero Tracker
+# Mybag.aero Baggage Tracker
 
 Home Assistant custom integration for tracking delayed baggage status from mybag.aero.
 
@@ -38,10 +38,10 @@ Useful sensor attributes:
 2. Go to `HACS -> Integrations -> Custom repositories`.
 3. Add this repository URL as type `Integration`:
    - `https://github.com/thomasgregg/mybag.aero-home-assistant-baggage-tracker`
-4. Install `Mybag.aero Tracker` from HACS.
+4. Install `Mybag.aero Baggage Tracker` from HACS.
 5. Restart Home Assistant.
 6. Go to `Settings -> Devices & Services -> Add Integration`.
-7. Search for `Mybag.aero Tracker`.
+7. Search for `Mybag.aero Baggage Tracker`.
 8. Enter:
    - Airline (`austrian`, `lufthansa`, `swiss`)
    - Reference number in file-reference format (for example `BEROS22525`)
