@@ -76,16 +76,18 @@ class MyBagTrackerOptionsFlow(config_entries.OptionsFlow):
     """MyBag Tracker options flow."""
 
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
-        self.config_entry = config_entry
+        super().__init__()
+        # Keep our own reference for broad HA-version compatibility.
+        self._config_entry = config_entry
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Manage options."""
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
-        current_interval = self.config_entry.options.get(
+        current_interval = self._config_entry.options.get(
             CONF_SCAN_INTERVAL_MINUTES,
-            self.config_entry.data.get(CONF_SCAN_INTERVAL_MINUTES, DEFAULT_SCAN_INTERVAL_MINUTES),
+            self._config_entry.data.get(CONF_SCAN_INTERVAL_MINUTES, DEFAULT_SCAN_INTERVAL_MINUTES),
         )
 
         schema = vol.Schema(
