@@ -1,7 +1,7 @@
 {
   "config": {
     "error": {
-      "invalid_reference": "Reference must be in file-reference format (for example BEROS22525).",
+      "invalid_reference": "Reference must be in file-reference format (for example ABCOS12345).",
       "invalid_family_name": "Family name is required."
     },
     "step": {

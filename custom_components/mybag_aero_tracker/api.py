@@ -193,7 +193,7 @@ class MyBagApiClient:
         match = re.fullmatch(r"([A-Z]{3})([A-Z0-9]{2})([A-Z0-9]+)", compact)
         if not match:
             raise ValueError(
-                "Reference must be in file-reference format, e.g. BEROS22525 (station+airline+number)."
+                "Reference must be in file-reference format, e.g. ABCOS12345 (station+airline+number)."
             )
         return match.group(1), match.group(2), match.group(3)
 

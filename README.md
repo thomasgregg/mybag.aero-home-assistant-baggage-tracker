@@ -44,7 +44,7 @@ Useful sensor attributes:
 7. Search for `Mybag.aero Baggage Tracker`.
 8. Enter:
    - Airline (`austrian`, `lufthansa`, `swiss`)
-   - Reference number in file-reference format (for example `BEROS22525`)
+   - Reference number in file-reference format (for example `ABCOS12345`)
    - Family name
    - Scan interval in minutes
 
