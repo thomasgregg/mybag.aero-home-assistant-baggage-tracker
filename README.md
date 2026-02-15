@@ -60,7 +60,7 @@ If Chromium is missing, the entity state becomes `error` with details in `messag
 
 ## Local development
 Integration files are under:
-- `custom_components/mybag_tracker`
+- `custom_components/mybag_aero_tracker`
 
 HACS metadata:
 - `hacs.json`

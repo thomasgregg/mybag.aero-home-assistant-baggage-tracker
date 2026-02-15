@@ -1,5 +1,5 @@
 {
-  "domain": "mybag_tracker",
+  "domain": "mybag_aero_tracker",
   "name": "MyBag Tracker",
   "codeowners": ["@thomasgregg"],
   "config_flow": true,

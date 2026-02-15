@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 
-DOMAIN = "mybag_tracker"
+DOMAIN = "mybag_aero_tracker"
 
 CONF_AIRLINE = "airline"
 CONF_REFERENCE_NUMBER = "reference_number"
