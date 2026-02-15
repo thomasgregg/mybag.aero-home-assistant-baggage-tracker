@@ -1,0 +1,38 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Add baggage tracker",
+        "description": "Track delayed baggage status from mybag.aero",
+        "data": {
+          "airline": "Airline",
+          "reference_number": "Reference number",
+          "family_name": "Family name",
+          "scan_interval_minutes": "Scan interval (minutes)"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "MyBag Tracker options",
+        "data": {
+          "scan_interval_minutes": "Scan interval (minutes)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "status": {
+        "name": "Status"
+      }
+    },
+    "binary_sensor": {
+      "found": {
+        "name": "Found"
+      }
+    }
+  }
+}
