@@ -1,60 +1,56 @@
-# MyBag Tracker (HACS Custom Integration)
+# Mybag.aero Tracker
 
-Home Assistant custom integration to track delayed baggage status on `mybag.aero`.
+Home Assistant custom integration for tracking delayed baggage status from mybag.aero.
 
 Supported airlines:
 - Austrian
 - Lufthansa
 - Swiss
 
-Supported pages:
-- `https://mybag.aero/baggage/#/pax/austrian/en-gb/delayed/manage-bag`
-- `https://mybag.aero/baggage/#/pax/lufthansa/en-gb/delayed/manage-bag`
-- `https://mybag.aero/baggage/#/pax/swiss/en-gb/delayed/manage-bag`
-
-## What it exposes
-For each configured bag (config entry), the integration creates:
-- `sensor.<...>_status`
-- `binary_sensor.<...>_found`
+## What you get
+For each configured baggage file, the integration creates:
+- `sensor.<name>_status`
+- `binary_sensor.<name>_found`
 
 `sensor` state values:
-- `searching`: still shows `SEARCHING FOR YOUR BAGGAGE`
-- `updated`: status changed from `SEARCHING FOR YOUR BAGGAGE`
-- `not_found`: reference number / family name combination not found
-- `error`: check failed
+- `searching`
+- `updated`
+- `not_found`
+- `error`
 
-Structured attributes on the status sensor include:
+Useful sensor attributes:
 - `airline`
 - `reference_number`
 - `family_name`
 - `bag_title`
 - `headline`
 - `details`
+- `tracing_statuses`
+- `no_of_bags_updated`
+- `record_status`
 - `message`
 - `is_searching`
 - `checked_at`
 - `source_url`
-- `raw_excerpt`
 
-## Install (HACS)
-1. Push this repository to GitHub.
-2. In Home Assistant: `HACS -> Integrations -> Custom repositories`.
-3. Add your repo URL, category: `Integration`.
-4. Install `MyBag Tracker`.
+## Install (End User, via HACS)
+1. Open Home Assistant.
+2. Go to `HACS -> Integrations -> Custom repositories`.
+3. Add this repository URL as type `Integration`:
+   - `https://github.com/thomasgregg/mybag.aero-home-assistant-baggage-tracker`
+4. Install `Mybag.aero Tracker` from HACS.
 5. Restart Home Assistant.
-6. Add integration: `Settings -> Devices & Services -> Add Integration -> MyBag Tracker`.
-7. Enter:
+6. Go to `Settings -> Devices & Services -> Add Integration`.
+7. Search for `Mybag.aero Tracker`.
+8. Enter:
    - Airline (`austrian`, `lufthansa`, `swiss`)
-   - Reference number (file reference format, for example `BEROS22525`)
+   - Reference number in file-reference format (for example `BEROS22525`)
    - Family name
-   - Scan interval (minutes, default 60)
+   - Scan interval in minutes
 
-## Runtime requirements
-No browser binaries are required. The integration uses direct HTTPS calls to `wtss-api.mybag.aero`.
+## Notes
+- No Playwright or browser binaries are required.
+- Data is fetched via direct HTTPS calls to `wtss-api.mybag.aero`.
 
-## Local development
-Integration files are under:
-- `custom_components/mybag_aero_tracker`
-
-HACS metadata:
-- `hacs.json`
+## README sync
+This repository intentionally uses this single root `README.md` for both GitHub and HACS (`hacs.json` has `render_readme: true`), so docs stay in sync.

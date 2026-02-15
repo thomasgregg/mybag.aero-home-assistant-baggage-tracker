@@ -1,5 +1,5 @@
 {
-  "name": "MyBag Tracker",
+  "name": "Mybag.aero Tracker",
   "render_readme": true,
   "homeassistant": "2024.1.0",
   "domains": ["mybag_aero_tracker"]

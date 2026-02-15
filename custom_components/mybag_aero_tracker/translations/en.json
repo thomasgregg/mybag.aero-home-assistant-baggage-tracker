@@ -6,7 +6,7 @@
     },
     "step": {
       "user": {
-        "title": "Add baggage tracker",
+        "title": "Add Mybag.aero Tracker",
         "description": "Track delayed baggage status from mybag.aero",
         "data": {
           "airline": "Airline",
@@ -20,7 +20,7 @@
   "options": {
     "step": {
       "init": {
-        "title": "MyBag Tracker options",
+        "title": "Mybag.aero Tracker options",
         "data": {
           "scan_interval_minutes": "Scan interval (minutes)"
         }
