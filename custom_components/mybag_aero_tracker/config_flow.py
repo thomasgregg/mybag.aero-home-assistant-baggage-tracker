@@ -82,9 +82,36 @@ class MyBagTrackerOptionsFlow(config_entries.OptionsFlow):
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Manage options."""
-        if user_input is not None:
-            return self.async_create_entry(title="", data=user_input)
+        errors: dict[str, str] = {}
 
+        if user_input is not None:
+            normalized_reference = re.sub(r"\s+", "", user_input[CONF_REFERENCE_NUMBER].upper())
+            normalized_family_name = user_input[CONF_FAMILY_NAME].strip().upper()
+
+            if not re.fullmatch(r"[A-Z]{3}[A-Z0-9]{2}[A-Z0-9]+", normalized_reference):
+                errors[CONF_REFERENCE_NUMBER] = "invalid_reference"
+            elif not normalized_family_name:
+                errors[CONF_FAMILY_NAME] = "invalid_family_name"
+            else:
+                return self.async_create_entry(
+                    title="",
+                    data={
+                        CONF_AIRLINE: user_input[CONF_AIRLINE],
+                        CONF_REFERENCE_NUMBER: normalized_reference,
+                        CONF_FAMILY_NAME: normalized_family_name,
+                        CONF_SCAN_INTERVAL_MINUTES: user_input[CONF_SCAN_INTERVAL_MINUTES],
+                    },
+                )
+
+        current_airline = self._config_entry.options.get(
+            CONF_AIRLINE, self._config_entry.data.get(CONF_AIRLINE, "austrian")
+        )
+        current_reference = self._config_entry.options.get(
+            CONF_REFERENCE_NUMBER, self._config_entry.data.get(CONF_REFERENCE_NUMBER, "")
+        )
+        current_family_name = self._config_entry.options.get(
+            CONF_FAMILY_NAME, self._config_entry.data.get(CONF_FAMILY_NAME, "")
+        )
         current_interval = self._config_entry.options.get(
             CONF_SCAN_INTERVAL_MINUTES,
             self._config_entry.data.get(CONF_SCAN_INTERVAL_MINUTES, DEFAULT_SCAN_INTERVAL_MINUTES),
@@ -92,10 +119,13 @@ class MyBagTrackerOptionsFlow(config_entries.OptionsFlow):
 
         schema = vol.Schema(
             {
+                vol.Required(CONF_AIRLINE, default=current_airline): vol.In(list(AIRLINE_URLS.keys())),
+                vol.Required(CONF_REFERENCE_NUMBER, default=current_reference): str,
+                vol.Required(CONF_FAMILY_NAME, default=current_family_name): str,
                 vol.Required(CONF_SCAN_INTERVAL_MINUTES, default=current_interval): vol.All(
                     vol.Coerce(int), vol.Range(min=5, max=720)
                 ),
             }
         )
 
-        return self.async_show_form(step_id="init", data_schema=schema)
+        return self.async_show_form(step_id="init", data_schema=schema, errors=errors)
