@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 import voluptuous as vol
@@ -31,18 +32,25 @@ class MyBagTrackerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
 
         if user_input is not None:
-            await self.async_set_unique_id(f"{user_input[CONF_AIRLINE]}_{user_input[CONF_REFERENCE_NUMBER].upper()}")
-            self._abort_if_unique_id_configured()
+            normalized_reference = re.sub(r"\s+", "", user_input[CONF_REFERENCE_NUMBER].upper())
+            normalized_family_name = user_input[CONF_FAMILY_NAME].strip().upper()
+            if not re.fullmatch(r"[A-Z]{3}[A-Z0-9]{2}[A-Z0-9]+", normalized_reference):
+                errors[CONF_REFERENCE_NUMBER] = "invalid_reference"
+            elif not normalized_family_name:
+                errors[CONF_FAMILY_NAME] = "invalid_family_name"
+            else:
+                await self.async_set_unique_id(f"{user_input[CONF_AIRLINE]}_{normalized_reference}")
+                self._abort_if_unique_id_configured()
 
-            return self.async_create_entry(
-                title=f"{user_input[CONF_AIRLINE].title()} {user_input[CONF_REFERENCE_NUMBER].upper()}",
-                data={
-                    CONF_AIRLINE: user_input[CONF_AIRLINE],
-                    CONF_REFERENCE_NUMBER: user_input[CONF_REFERENCE_NUMBER].upper(),
-                    CONF_FAMILY_NAME: user_input[CONF_FAMILY_NAME],
-                    CONF_SCAN_INTERVAL_MINUTES: user_input[CONF_SCAN_INTERVAL_MINUTES],
-                },
-            )
+                return self.async_create_entry(
+                    title=f"{user_input[CONF_AIRLINE].title()} {normalized_reference}",
+                    data={
+                        CONF_AIRLINE: user_input[CONF_AIRLINE],
+                        CONF_REFERENCE_NUMBER: normalized_reference,
+                        CONF_FAMILY_NAME: normalized_family_name,
+                        CONF_SCAN_INTERVAL_MINUTES: user_input[CONF_SCAN_INTERVAL_MINUTES],
+                    },
+                )
 
         schema = vol.Schema(
             {

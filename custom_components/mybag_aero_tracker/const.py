@@ -17,10 +17,20 @@ DEFAULT_TIMEOUT_SECONDS = 90
 SEARCHING_TEXT = "SEARCHING FOR YOUR BAGGAGE"
 NO_RECORD_TEXT = "NO RECORD WAS FOUND"
 
+API_BASE_URL = "https://wtss-api.mybag.aero"
+MANAGE_LOGIN_ENDPOINT = "/manageLogin"
+API_KEY = "P"
+
 AIRLINE_URLS = {
     "austrian": "https://mybag.aero/baggage/#/pax/austrian/en-gb/delayed/manage-bag",
     "lufthansa": "https://mybag.aero/baggage/#/pax/lufthansa/en-gb/delayed/manage-bag",
     "swiss": "https://mybag.aero/baggage/#/pax/swiss/en-gb/delayed/manage-bag",
+}
+
+AIRLINE_CODES = {
+    "austrian": "OS",
+    "lufthansa": "LH",
+    "swiss": "LX",
 }
 
 UPDATE_INTERVAL = timedelta(minutes=DEFAULT_SCAN_INTERVAL_MINUTES)

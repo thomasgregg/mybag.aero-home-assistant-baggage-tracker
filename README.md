@@ -45,18 +45,12 @@ Structured attributes on the status sensor include:
 6. Add integration: `Settings -> Devices & Services -> Add Integration -> MyBag Tracker`.
 7. Enter:
    - Airline (`austrian`, `lufthansa`, `swiss`)
-   - Reference number
+   - Reference number (file reference format, for example `BEROS22525`)
    - Family name
    - Scan interval (minutes, default 60)
 
-## Important runtime requirement
-This integration uses Playwright. On Home Assistant OS/Container you may need browser binaries:
-
-```bash
-python -m playwright install chromium
-```
-
-If Chromium is missing, the entity state becomes `error` with details in `message`.
+## Runtime requirements
+No browser binaries are required. The integration uses direct HTTPS calls to `wtss-api.mybag.aero`.
 
 ## Local development
 Integration files are under:

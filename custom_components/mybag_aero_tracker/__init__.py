@@ -5,6 +5,7 @@ from __future__ import annotations
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import MyBagApiClient
 from .const import AIRLINE_URLS, CONF_AIRLINE, CONF_FAMILY_NAME, CONF_REFERENCE_NUMBER, CONF_SCAN_INTERVAL_MINUTES, DOMAIN
@@ -19,8 +20,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     reference_number = entry.data[CONF_REFERENCE_NUMBER]
     family_name = entry.data[CONF_FAMILY_NAME]
     interval_minutes = entry.options.get(CONF_SCAN_INTERVAL_MINUTES, entry.data[CONF_SCAN_INTERVAL_MINUTES])
+    session = async_get_clientsession(hass)
 
     client = MyBagApiClient(
+        session=session,
         airline=airline,
         reference_number=reference_number,
         family_name=family_name,

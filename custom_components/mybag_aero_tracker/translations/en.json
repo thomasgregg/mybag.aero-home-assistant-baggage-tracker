@@ -1,5 +1,9 @@
 {
   "config": {
+    "error": {
+      "invalid_reference": "Reference must be in file-reference format (for example BEROS22525).",
+      "invalid_family_name": "Family name is required."
+    },
     "step": {
       "user": {
         "title": "Add baggage tracker",

@@ -3,10 +3,8 @@
   "name": "MyBag Tracker",
   "codeowners": ["@thomasgregg"],
   "config_flow": true,
-  "documentation": "https://github.com/thomasgregg/delayed-baggage-tracker",
+  "documentation": "https://github.com/thomasgregg/mybag.aero-home-assistant-baggage-tracker",
   "integration_type": "service",
   "iot_class": "cloud_polling",
-  "loggers": ["playwright"],
-  "requirements": ["playwright==1.58.0"],
   "version": "0.1.0"
 }
