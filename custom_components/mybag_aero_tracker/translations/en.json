@@ -22,9 +22,6 @@
       "init": {
         "title": "Mybag.aero Baggage Tracker options",
         "data": {
-          "airline": "Airline",
-          "reference_number": "Reference number",
-          "family_name": "Family name",
           "scan_interval_minutes": "Scan interval (minutes)"
         }
       }

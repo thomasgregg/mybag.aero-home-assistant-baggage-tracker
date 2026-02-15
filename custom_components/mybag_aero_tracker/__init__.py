@@ -16,9 +16,9 @@ PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.BINARY_SENSOR]
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up MyBag Tracker from a config entry."""
-    airline = entry.options.get(CONF_AIRLINE, entry.data[CONF_AIRLINE])
-    reference_number = entry.options.get(CONF_REFERENCE_NUMBER, entry.data[CONF_REFERENCE_NUMBER])
-    family_name = entry.options.get(CONF_FAMILY_NAME, entry.data[CONF_FAMILY_NAME])
+    airline = entry.data[CONF_AIRLINE]
+    reference_number = entry.data[CONF_REFERENCE_NUMBER]
+    family_name = entry.data[CONF_FAMILY_NAME]
     interval_minutes = entry.options.get(CONF_SCAN_INTERVAL_MINUTES, entry.data[CONF_SCAN_INTERVAL_MINUTES])
     session = async_get_clientsession(hass)
 
