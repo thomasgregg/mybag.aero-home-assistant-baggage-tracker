@@ -7,6 +7,10 @@ Supported airlines:
 - Lufthansa
 - Swiss
 
+## Limitations
+- Multi-bag delayed baggage reports (more than one luggage piece in one report) are not tested.
+- It may work, but behavior is currently unknown because no suitable sample data was available for testing.
+
 ## What you get
 For each configured baggage file, the integration creates:
 - `sensor.<name>_status`
