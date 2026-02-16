@@ -7,10 +7,6 @@ Supported airlines:
 - Lufthansa
 - Swiss
 
-## Limitations
-- Multi-bag delayed baggage reports (more than one luggage piece in one report) are not tested.
-- It may work, but behavior is currently unknown because no suitable sample data was available for testing.
-
 ## What you get
 For each configured baggage file, the integration creates:
 - `sensor.<name>_status`
@@ -36,6 +32,10 @@ Useful sensor attributes:
 - `is_searching`
 - `checked_at`
 - `source_url`
+
+## Limitations
+- Multi-bag delayed baggage reports (more than one luggage piece in one report) are not tested.
+- It may work, but behavior is currently unknown because no suitable sample data was available for testing.
 
 ## Install (End User, via HACS)
 1. Open Home Assistant.
