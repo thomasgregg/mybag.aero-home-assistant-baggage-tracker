@@ -273,70 +273,135 @@ class MyBagApiClient:
         return f"DELAYED BAGGAGE {seq} - {tag_text}"
 
     def _extract_delivery_details(self, delayed_record: dict) -> dict | None:
+        details: dict[str, str] = {}
+
+        delayed_group = delayed_record.get("DelayedBagGroup", {})
+        delayed_bags = delayed_group.get("DelayedBags", {})
+        bag_items = delayed_bags.get("DelayedBag", []) or []
+        first_bag = bag_items[0] if bag_items else {}
+
+        # Structured bag delivery timestamps
+        bag_delivery = first_bag.get("BagDelivery", {})
+        status = bag_delivery.get("Status", {})
+        pickup = ((status.get("TrackingUpdate") or {}).get("value") or "").strip()
+        scheduled = ((status.get("OutForDelivery") or {}).get("value") or "").strip()
+        if pickup:
+            details["pickup_datetime_local"] = pickup
+        if scheduled:
+            details["scheduled_delivery_local"] = scheduled
+
+        # Passenger/contact details
+        passenger = delayed_record.get("Passengers", {})
+        contact = passenger.get("ContactInfo", {})
+        permanent = contact.get("PermanentAddress", {})
+        last_name = (((passenger.get("Names") or {}).get("Name") or [{}])[0].get("value") or "").strip()
+        if last_name:
+            details["passenger_name"] = last_name
+        phone = ((((contact.get("CellPhones") or {}).get("Phone")) or [{}])[0].get("value") or "").strip()
+        if phone:
+            details["telephone_number"] = phone
+
+        addr_line = (((permanent.get("AddressLine") or [{}])[0].get("value")) or "").strip()
+        city = ((permanent.get("City") or {}).get("value") or "").strip()
+        state = ((permanent.get("State") or {}).get("value") or "").strip()
+        postal = ((permanent.get("PostalCode") or {}).get("value") or "").strip()
+        country_obj = permanent.get("Country") or {}
+        country = (country_obj.get("value") or "").strip()
+        country_code = (country_obj.get("Code") or "").strip().upper()
+        if not country and country_code:
+            country = {"DE": "Germany", "AT": "Austria", "CH": "Switzerland"}.get(country_code, country_code)
+        address_parts = [x for x in [addr_line, city, state, postal, country] if x]
+        if address_parts:
+            details["delivery_address"] = ", ".join(address_parts)
+
+        # Bag details
+        tag = first_bag.get("BagTag", {})
+        airline_tag = (tag.get("AirlineCode") or "").strip()
+        tag_seq = (tag.get("TagSequence") or "").strip()
+        if airline_tag and tag_seq:
+            details["tag_details"] = f"{airline_tag}{tag_seq}"
+        color_code = (((first_bag.get("ColorTypeDesc") or {}).get("ColorCode")) or "").strip().upper()
+        if color_code:
+            details["baggage_colour"] = {
+                "GY": "Grey",
+                "BL": "Blue",
+                "BK": "Black",
+                "RD": "Red",
+                "WH": "White",
+            }.get(color_code, color_code)
+
+        if bag_items:
+            details["number_of_baggage_in_delivery"] = str(len(bag_items))
+
+        # Encoded delivery details block (source for courier website and commission date)
+        delivery_info_text = ""
+        ai = delayed_record.get("AdditionalInfo", {})
+        delivery_info = ai.get("DeliveryInfo", {}) if isinstance(ai, dict) else {}
+        if isinstance(delivery_info, dict):
+            text_list = delivery_info.get("Text", [])
+            if isinstance(text_list, list) and text_list:
+                first_text = text_list[0]
+                if isinstance(first_text, dict):
+                    delivery_info_text = (first_text.get("value") or "").strip()
+
+        if delivery_info_text:
+            for line in [ln.strip() for ln in delivery_info_text.splitlines()]:
+                if line.startswith("DS "):
+                    parts = [p.strip() for p in line[3:].split(" - ") if p.strip()]
+                    if len(parts) >= 2:
+                        details["delivery_reference"] = parts[0]
+                        details["delivery_service"] = parts[1]
+                elif line.startswith("CW "):
+                    raw = line[3:].strip()
+                    site = raw.replace("/D/", ".").strip("/")
+                    if site:
+                        details["courier_website"] = site
+                        details["courier_tracking_url"] = (
+                            site if site.lower().startswith(("http://", "https://")) else f"https://{site}"
+                        )
+                elif line.startswith("ZP "):
+                    # Example: ZP 14476 .DD 18FEB .DW ...
+                    match = re.search(r"\.DD\s+([A-Z0-9]+)", line)
+                    if match:
+                        details["commission_date"] = match.group(1).strip()
+                elif line.startswith("CT01 ") and "baggage_type" not in details:
+                    details["baggage_type"] = line[5:].strip()
+
+        # Email fallback for human-readable baggage type and note text.
         email_info = delayed_record.get("EmailInfo", {})
         text_items = email_info.get("Text", []) if isinstance(email_info, dict) else []
-        if not isinstance(text_items, list):
-            return None
-
         candidate = None
-        for item in reversed(text_items):
-            if not isinstance(item, dict):
-                continue
-            value = item.get("value")
-            if not isinstance(value, str):
-                continue
-            if "Baggage Delivery Order Created" in value:
-                candidate = value
-                break
+        if isinstance(text_items, list):
+            for item in reversed(text_items):
+                if not isinstance(item, dict):
+                    continue
+                value = item.get("value")
+                if isinstance(value, str) and "Baggage Delivery Order Created" in value:
+                    candidate = value
+                    break
 
-        if not candidate:
-            return None
+        if candidate:
+            marker = "ADVICE TO CUSTOMER - PLEASE NOTE"
+            if marker in candidate and "note" not in details:
+                details["note"] = candidate.split(marker, 1)[1].strip()
 
-        lines = [line.strip() for line in candidate.splitlines()]
-        line_map: dict[str, str] = {}
-        for idx, line in enumerate(lines[:-1]):
-            if line.endswith(":"):
-                nxt = lines[idx + 1].strip()
-                if nxt:
-                    line_map[line[:-1].strip().lower()] = nxt
-            elif ":" in line:
-                key, value = line.split(":", 1)
-                if key.strip() and value.strip():
-                    line_map[key.strip().lower()] = value.strip()
+            if "baggage_type" not in details:
+                bag_type_match = re.search(
+                    r"Bag\s*-\s*\d+\s*Type\s*\d+\s*:\s*(.+)",
+                    candidate,
+                    re.IGNORECASE,
+                )
+                if bag_type_match:
+                    details["baggage_type"] = bag_type_match.group(1).strip()
 
-        note = None
-        marker = "ADVICE TO CUSTOMER - PLEASE NOTE"
-        if marker in candidate:
-            note = candidate.split(marker, 1)[1].strip()
-
-        def pick(*keys: str) -> str | None:
-            for key in keys:
-                value = line_map.get(key)
-                if value:
-                    return value
-            return None
-
-        details = {
-            "created_by": pick("baggage delivery order created by"),
-            "number_of_baggage_in_delivery": pick("number of bags in delivery"),
-            "delivery_service": pick("delivery service"),
-            "pickup_datetime_local": pick("date/time picked up for delivery"),
-            "commission_date": pick("delivery date"),
-            "courier_website": pick("courier website"),
-            "passenger_name": pick("passenger name"),
-            "delivery_address": pick("permanent address", "delivery address"),
-            "telephone_number": pick("telephone numbers", "telephone number"),
-            "baggage_type": pick("bag - 1  type 22", "baggage type"),
-            "baggage_colour": pick("colour", "baggage colour"),
-            "tag_details": pick("tag details"),
-            "note": note,
-        }
-        if not details["created_by"]:
-            created_match = re.search(r"Baggage Delivery Order Created by\s+([^\n]+)", candidate, re.IGNORECASE)
+            created_match = re.search(
+                r"Baggage Delivery Order Created by\s+([^\n]+)",
+                candidate,
+                re.IGNORECASE,
+            )
             if created_match:
                 details["created_by"] = created_match.group(1).strip()
-        if details["telephone_number"] and ":" in details["telephone_number"]:
-            details["telephone_number"] = details["telephone_number"].split(":", 1)[1].strip()
+
         cleaned = {k: v for k, v in details.items() if v}
         return cleaned or None
 
