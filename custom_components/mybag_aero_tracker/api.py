@@ -143,6 +143,7 @@ class MyBagApiClient:
 
             first_bag = bag_items[0] if bag_items else {}
             bag_title = self._build_bag_title(first_bag)
+            delivery_details = self._extract_delivery_details(delayed_record)
 
             headline = (
                 SEARCHING_TEXT
@@ -177,6 +178,7 @@ class MyBagApiClient:
                 status_steps=status_steps,
                 current_status_text=current_status_text,
                 status_body=status_body,
+                delivery_details=delivery_details,
                 no_of_bags_updated=no_of_bags_updated,
                 record_status=delayed_record.get("RecordStatus"),
                 raw_excerpt=response_text[:1000],
@@ -269,6 +271,74 @@ class MyBagApiClient:
         if seq is None:
             return f"DELAYED BAGGAGE - {tag_text}"
         return f"DELAYED BAGGAGE {seq} - {tag_text}"
+
+    def _extract_delivery_details(self, delayed_record: dict) -> dict | None:
+        email_info = delayed_record.get("EmailInfo", {})
+        text_items = email_info.get("Text", []) if isinstance(email_info, dict) else []
+        if not isinstance(text_items, list):
+            return None
+
+        candidate = None
+        for item in reversed(text_items):
+            if not isinstance(item, dict):
+                continue
+            value = item.get("value")
+            if not isinstance(value, str):
+                continue
+            if "Baggage Delivery Order Created" in value:
+                candidate = value
+                break
+
+        if not candidate:
+            return None
+
+        lines = [line.strip() for line in candidate.splitlines()]
+        line_map: dict[str, str] = {}
+        for idx, line in enumerate(lines[:-1]):
+            if line.endswith(":"):
+                nxt = lines[idx + 1].strip()
+                if nxt:
+                    line_map[line[:-1].strip().lower()] = nxt
+            elif ":" in line:
+                key, value = line.split(":", 1)
+                if key.strip() and value.strip():
+                    line_map[key.strip().lower()] = value.strip()
+
+        note = None
+        marker = "ADVICE TO CUSTOMER - PLEASE NOTE"
+        if marker in candidate:
+            note = candidate.split(marker, 1)[1].strip()
+
+        def pick(*keys: str) -> str | None:
+            for key in keys:
+                value = line_map.get(key)
+                if value:
+                    return value
+            return None
+
+        details = {
+            "created_by": pick("baggage delivery order created by"),
+            "number_of_baggage_in_delivery": pick("number of bags in delivery"),
+            "delivery_service": pick("delivery service"),
+            "pickup_datetime_local": pick("date/time picked up for delivery"),
+            "commission_date": pick("delivery date"),
+            "courier_website": pick("courier website"),
+            "passenger_name": pick("passenger name"),
+            "delivery_address": pick("permanent address", "delivery address"),
+            "telephone_number": pick("telephone numbers", "telephone number"),
+            "baggage_type": pick("bag - 1  type 22", "baggage type"),
+            "baggage_colour": pick("colour", "baggage colour"),
+            "tag_details": pick("tag details"),
+            "note": note,
+        }
+        if not details["created_by"]:
+            created_match = re.search(r"Baggage Delivery Order Created by\s+([^\n]+)", candidate, re.IGNORECASE)
+            if created_match:
+                details["created_by"] = created_match.group(1).strip()
+        if details["telephone_number"] and ":" in details["telephone_number"]:
+            details["telephone_number"] = details["telephone_number"].split(":", 1)[1].strip()
+        cleaned = {k: v for k, v in details.items() if v}
+        return cleaned or None
 
     def _parse_file_reference(self, reference: str) -> tuple[str, str, str]:
         compact = re.sub(r"\s+", "", reference.upper())

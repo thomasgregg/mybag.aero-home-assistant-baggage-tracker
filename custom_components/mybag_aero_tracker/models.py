@@ -26,6 +26,7 @@ class BaggageStatus:
     status_steps: list[str] | None = None
     current_status_text: str | None = None
     status_body: str | None = None
+    delivery_details: dict | None = None
     no_of_bags_updated: int | None = None
     record_status: str | None = None
     raw_excerpt: str | None = None

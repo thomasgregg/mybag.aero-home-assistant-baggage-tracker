@@ -63,6 +63,7 @@ class MyBagStatusSensor(CoordinatorEntity[MyBagDataUpdateCoordinator], SensorEnt
             "status_steps": data.status_steps,
             "current_status_text": data.current_status_text,
             "status_body": data.status_body,
+            "delivery_details": data.delivery_details,
             "no_of_bags_updated": data.no_of_bags_updated,
             "record_status": data.record_status,
             "message": data.message,

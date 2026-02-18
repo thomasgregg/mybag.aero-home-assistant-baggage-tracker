@@ -20,6 +20,7 @@ NO_RECORD_TEXT = "NO RECORD WAS FOUND"
 API_BASE_URL = "https://wtss-api.mybag.aero"
 MANAGE_LOGIN_ENDPOINT = "/manageLogin"
 API_KEY = "P"
+DYNAMIC_MESSAGES_URL = "https://mybag.aero/baggage/assets/static/common-dynamic-messages/en-gb.json"
 
 AIRLINE_URLS = {
     "austrian": "https://mybag.aero/baggage/#/pax/austrian/en-gb/delayed/manage-bag",
