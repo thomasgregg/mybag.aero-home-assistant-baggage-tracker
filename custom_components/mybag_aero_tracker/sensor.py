@@ -67,7 +67,6 @@ class MyBagStatusSensor(CoordinatorEntity[MyBagDataUpdateCoordinator], SensorEnt
             "no_of_bags_updated": data.no_of_bags_updated,
             "record_status": data.record_status,
             "message": data.message,
-            "is_searching": data.is_searching,
             "checked_at": data.checked_at.isoformat(),
             "source_url": data.url,
             "raw_excerpt": data.raw_excerpt,

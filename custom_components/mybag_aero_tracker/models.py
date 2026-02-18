@@ -17,7 +17,6 @@ class BaggageStatus:
     family_name: str
     url: str
     message: str
-    is_searching: bool
     bag_title: str | None = None
     headline: str | None = None
     details: str | None = None

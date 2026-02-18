@@ -37,7 +37,6 @@ Useful sensor attributes:
 - `no_of_bags_updated`
 - `record_status`
 - `message`
-- `is_searching`
 - `checked_at`
 - `source_url`
 - `raw_excerpt`

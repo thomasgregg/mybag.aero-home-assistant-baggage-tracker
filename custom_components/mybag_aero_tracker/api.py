@@ -101,7 +101,6 @@ class MyBagApiClient:
                         family_name=self._family_name,
                         url=self._url,
                         message="No record found for reference number and family name.",
-                        is_searching=False,
                     )
                 # 489/490/492 can happen based on validator behavior; try the fallback validator.
                 if response_status not in (489, 490, 492):
@@ -161,7 +160,8 @@ class MyBagApiClient:
                 else status_body or "Good news: baggage status changed."
             )
             state = self._derive_state(
-                is_searching=is_searching,
+                no_of_bags_updated=no_of_bags_updated,
+                tracing_statuses=tracing_statuses,
                 current_status_text=current_status_text,
                 status_body=status_body,
                 delivery_details=delivery_details,
@@ -175,7 +175,6 @@ class MyBagApiClient:
                 family_name=self._family_name,
                 url=self._url,
                 message=message,
-                is_searching=is_searching,
                 bag_title=bag_title,
                 headline=headline,
                 details=details,
@@ -195,12 +194,13 @@ class MyBagApiClient:
     def _derive_state(
         self,
         *,
-        is_searching: bool,
+        no_of_bags_updated: int,
+        tracing_statuses: list[str],
         current_status_text: str | None,
         status_body: str | None,
         delivery_details: dict | None,
     ) -> str:
-        if is_searching:
+        if self._is_searching_state(no_of_bags_updated, tracing_statuses):
             return "searching"
 
         # Delivery timestamp is the strongest signal for terminal state.
@@ -480,7 +480,6 @@ class MyBagApiClient:
             family_name=self._family_name,
             url=self._url,
             message=message,
-            is_searching=False,
         )
 AIRLINE_CODES = integration_const.AIRLINE_CODES
 API_BASE_URL = integration_const.API_BASE_URL
