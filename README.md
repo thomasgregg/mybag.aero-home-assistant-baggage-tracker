@@ -192,6 +192,9 @@ cards:
         {% if d.get('scheduled_delivery_local') %}**Scheduled delivery:** {{
         d.get('scheduled_delivery_local') }}{% endif %}
 
+        {% if d.get('delivered_datetime_local') %}**Delivered:** {{
+        d.get('delivered_datetime_local') }}{% endif %}
+
         {% if d.get('commission_date') %}**Date of commission:** {{
         d.get('commission_date') }}{% endif %}
 

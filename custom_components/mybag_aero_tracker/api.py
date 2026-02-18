@@ -285,10 +285,31 @@ class MyBagApiClient:
         status = bag_delivery.get("Status", {})
         pickup = ((status.get("TrackingUpdate") or {}).get("value") or "").strip()
         scheduled = ((status.get("OutForDelivery") or {}).get("value") or "").strip()
+        delivered = (
+            ((status.get("Delivered") or {}).get("value") or "")
+            or ((status.get("DeliveryComplete") or {}).get("value") or "")
+            or ((status.get("DeliveredToCustomer") or {}).get("value") or "")
+        ).strip()
+
+        # Fallback: different airlines/environments may expose delivered time under
+        # another key in BagDelivery.Status.
+        if not delivered and isinstance(status, dict):
+            for key, value in status.items():
+                if "delivered" not in str(key).lower():
+                    continue
+                if not isinstance(value, dict):
+                    continue
+                candidate = (value.get("value") or "").strip()
+                if candidate:
+                    delivered = candidate
+                    break
+
         if pickup:
             details["pickup_datetime_local"] = pickup
         if scheduled:
             details["scheduled_delivery_local"] = scheduled
+        if delivered:
+            details["delivered_datetime_local"] = delivered
 
         # Passenger/contact details
         passenger = delayed_record.get("Passengers", {})
