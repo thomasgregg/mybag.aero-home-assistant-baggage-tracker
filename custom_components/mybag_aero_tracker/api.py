@@ -48,25 +48,6 @@ class MyBagApiClient:
                     f"but selected airline expects {expected_airline}."
                 )
 
-            payload = {
-                "WTR_ReadRecordRQ": {
-                    "RecordID": {
-                        "RecordType": "DELAYED",
-                        "RecordReference": {
-                            "ReferenceNumber": short_reference,
-                            "StationCode": station_code,
-                            "AirlineCode": airline_code,
-                            "LastName": self._family_name,
-                        },
-                    },
-                    "AgentID": "GUEST",
-                    "Version": 0.1,
-                    "Validator": 0,
-                    "LoginAfterTimeInDays": 21,
-                    "captchaResponse": "",
-                }
-            }
-
             auth_payload = {
                 "fileRef": self._reference_number,
                 "lastName": self._family_name,
@@ -82,29 +63,58 @@ class MyBagApiClient:
                 "Authorization": f"{airline_code} {auth_encoded}",
                 "User-Agent": USER_AGENT,
             }
+            response_status = 0
+            response_text = ""
+            for validator in (1, 0):
+                payload = {
+                    "WTR_ReadRecordRQ": {
+                        "RecordID": {
+                            "RecordType": "DELAYED",
+                            "RecordReference": {
+                                "ReferenceNumber": short_reference,
+                                "StationCode": station_code,
+                                "AirlineCode": airline_code,
+                                "LastName": self._family_name,
+                            },
+                        },
+                        "AgentID": "GUEST",
+                        "Version": 0.1,
+                        "Validator": validator,
+                        "LoginAfterTimeInDays": 21,
+                        "captchaResponse": "",
+                    }
+                }
 
-            async with self._session.post(
-                f"{API_BASE_URL}{MANAGE_LOGIN_ENDPOINT}",
-                json=payload,
-                headers=headers,
-            ) as response:
-                response_text = await response.text()
+                async with self._session.post(
+                    f"{API_BASE_URL}{MANAGE_LOGIN_ENDPOINT}",
+                    json=payload,
+                    headers=headers,
+                ) as response:
+                    response_text = await response.text()
+                    response_status = response.status
 
-            if response.status == 401:
-                return BaggageStatus(
-                    state="not_found",
-                    checked_at=datetime.now(UTC),
-                    airline=self._airline,
-                    reference_number=self._reference_number,
-                    family_name=self._family_name,
-                    url=self._url,
-                    message="No record found for reference number and family name.",
-                    is_searching=False,
-                )
+                # 200 is success.
+                if response_status == 200:
+                    break
+                # 401 is a hard "not found", no need to retry.
+                if response_status == 401:
+                    return BaggageStatus(
+                        state="not_found",
+                        checked_at=datetime.now(UTC),
+                        airline=self._airline,
+                        reference_number=self._reference_number,
+                        family_name=self._family_name,
+                        url=self._url,
+                        message="No record found for reference number and family name.",
+                        is_searching=False,
+                    )
+                # 489/490/492 can happen based on validator behavior; try the fallback validator.
+                if response_status not in (489, 490, 492):
+                    break
 
-            if response.status != 200:
+            if response_status != 200:
                 return self._error_status(
-                    f"mybag API returned HTTP {response.status}: {response_text[:300]}"
+                    f"mybag API returned HTTP {response_status}: {response_text[:300]}"
                 )
 
             response_json = json.loads(response_text)
