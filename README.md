@@ -26,12 +26,18 @@ Useful sensor attributes:
 - `headline`
 - `details`
 - `tracing_statuses`
+- `primary_tracing_status`
+- `status_steps`
+- `current_status_text`
+- `status_body`
+- `delivery_details`
 - `no_of_bags_updated`
 - `record_status`
 - `message`
 - `is_searching`
 - `checked_at`
 - `source_url`
+- `raw_excerpt`
 
 ## Limitations
 - Multi-bag delayed baggage reports (more than one luggage piece in one report) are not tested.
@@ -65,7 +71,7 @@ cards:
     square: false
     cards:
       - type: tile
-        entity: sensor.mybag_abcos12345_status
+        entity: sensor.mybag_beros22525_status
         name: Baggage Status
         icon: mdi:bag-checked
         state_content:
@@ -74,100 +80,152 @@ cards:
         vertical: false
         features_position: bottom
       - type: tile
-        entity: binary_sensor.mybag_abcos12345_found
+        entity: binary_sensor.mybag_beros22525_found
         name: Bag Found
         icon: mdi:bag-checked
         state_content:
           - state
-          - last_updated
-        vertical: false
-        features_position: bottom
-
   - type: markdown
-    content: |
-      {% set e = 'sensor.mybag_abcos12345_status' %}
+    content: >
+      {% set e = 'sensor.mybag_beros22525_status' %}
+
       {% set s = states(e) %}
+
       {% set bag_title = state_attr(e, 'bag_title') %}
-      {% set headline = state_attr(e, 'headline') %}
-      {% set details = state_attr(e, 'details') %}
+
       {% set airline = state_attr(e, 'airline') %}
+
       {% set ref = state_attr(e, 'reference_number') %}
+
       {% set checked = state_attr(e, 'checked_at') %}
-      {% set msg = state_attr(e, 'message') %}
+
+      {% set current = state_attr(e, 'current_status_text') %}
+
+      {% set body = state_attr(e, 'status_body') %}
+
+      {% set steps = state_attr(e, 'status_steps') %}
+
+
+      {% set current_norm = (current or '') | lower | replace('.', '') %}
+
+      {% set body_norm = (body or '') | lower | replace('.', '') %}
+
+      {% set show_body = body and (body_norm not in current_norm) and
+      (current_norm not in body_norm) %}
+
 
       ## {{ bag_title if bag_title else 'Delayed Baggage' }}
 
-      **Airline:** {{ airline }}  
+
+      **Airline:** {{ airline|title }}  
+
       **Reference:** {{ ref }}  
-      **State:** `{{ s }}`
 
-      ---
+      **Current state:** `{{ s }}`  
 
-      {% if headline %}
-      **Headline:**  
-      {{ headline }}
+      {% if checked %}**Last check:** {{ as_timestamp(checked) |
+      timestamp_custom('%Y-%m-%d %H:%M:%S') }}{% endif %}
+
+
+      {% if current %}
+
+
+      ### Current status
+
+
+      {{ current }}
+
+
       {% endif %}
 
-      {% if details %}
-      **Details:**  
-      {{ details }}
+
+      {% if show_body %}
+
+
+      {{ body }}
+
+
       {% endif %}
 
-      {% if checked %}
-      **Last check:**  
-      {{ as_timestamp(checked) | timestamp_custom('%Y-%m-%d %H:%M:%S') }}
-      {% endif %}
 
-      {% if msg %}
-      **Message:**  
-      {{ msg }}
-      {% endif %}
+      {% if steps and steps | length > 0 %}
 
+
+      ### Progress
+
+
+      {% for step in steps %}
+
+
+      - {{ step }}
+
+
+      {% endfor %}
+
+
+      {% endif %}
   - type: conditional
     conditions:
-      - entity: sensor.mybag_abcos12345_status
-        state: searching
-    card:
-      type: markdown
-      content: |
-        ## Current phase
-        Still searching for your baggage.
-
-  - type: conditional
-    conditions:
-      - entity: sensor.mybag_abcos12345_status
+      - condition: state
+        entity: sensor.mybag_beros22525_status
         state: updated
     card:
       type: markdown
-      content: |
-        ## Good news
-        Baggage status changed from searching.
+      content: >-
+        {% set d = state_attr('sensor.mybag_beros22525_status',
+        'delivery_details') or {} %}
 
-  - type: conditional
-    conditions:
-      - entity: sensor.mybag_abcos12345_status
-        state: not_found
-    card:
-      type: markdown
-      content: |
-        ## Check input
-        Reference number / family name combination was not found.
+        ## Delivery details
 
-  - type: conditional
-    conditions:
-      - entity: sensor.mybag_abcos12345_status
-        state: error
-    card:
-      type: markdown
-      content: >
-        ## Error
-        {{ state_attr('sensor.mybag_abcos12345_status', 'message') }}
+        {% if d.get('created_by') %}**Created by:** {{ d.get('created_by') }}{%
+        endif %}
+
+        {% if d.get('number_of_baggage_in_delivery') %}**Number of baggage:** {{
+        d.get('number_of_baggage_in_delivery') }}{% endif %}
+
+        {% if d.get('delivery_service') %}**Delivery service:** {{
+        d.get('delivery_service') }}{% endif %}
+
+        {% if d.get('pickup_datetime_local') %}**Picked up:** {{
+        d.get('pickup_datetime_local') }}{% endif %}
+
+        {% if d.get('scheduled_delivery_local') %}**Scheduled delivery:** {{
+        d.get('scheduled_delivery_local') }}{% endif %}
+
+        {% if d.get('commission_date') %}**Date of commission:** {{
+        d.get('commission_date') }}{% endif %}
+
+        {% if d.get('courier_website') %}**Courier website:** {{
+        d.get('courier_website') }}{% endif %}
+
+        {% if d.get('passenger_name') %}**Passenger name:** {{
+        d.get('passenger_name') }}{% endif %}
+
+        {% if d.get('delivery_address') %}**Delivery address:** {{
+        d.get('delivery_address') }}{% endif %}
+
+        {% if d.get('telephone_number') %}**Telephone number:** {{
+        d.get('telephone_number') }}{% endif %}
+
+        {% if d.get('baggage_type') %}**Baggage type:** {{ d.get('baggage_type')
+        }}{% endif %}
+
+        {% if d.get('baggage_colour') %}**Baggage colour:** {{
+        d.get('baggage_colour') }}{% endif %}
+
+        {% if d.get('tag_details') %}**Tag details:** {{ d.get('tag_details')
+        }}{% endif %}
+
+        {% if d.get('courier_tracking_url') %}**Tracking:** [{{
+        d.get('courier_tracking_url') }}]({{ d.get('courier_tracking_url') }}){%
+        endif %}
+
+
+        {% if d.get('note') %}
+
+        **Please note**  
+
+        {{ d.get('note') }}
+
+        {% endif %}
 ```
-
-### Why the conditional cards are there
-Each conditional card is only shown when the status sensor matches a specific state (`searching`, `updated`, `not_found`, `error`).
-
-This keeps the dashboard readable:
-- users see only the relevant status message
-- there is no need to read every possible state at once
-- the card becomes a clear "what should I do now" panel
