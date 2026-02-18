@@ -9,15 +9,7 @@ from datetime import UTC, datetime
 
 from aiohttp import ClientSession
 
-from .const import (
-    AIRLINE_CODES,
-    API_BASE_URL,
-    API_KEY,
-    DYNAMIC_MESSAGES_URL,
-    MANAGE_LOGIN_ENDPOINT,
-    SEARCHING_TEXT,
-    USER_AGENT,
-)
+from . import const as integration_const
 from .models import BaggageStatus
 
 
@@ -298,3 +290,15 @@ class MyBagApiClient:
             message=message,
             is_searching=False,
         )
+AIRLINE_CODES = integration_const.AIRLINE_CODES
+API_BASE_URL = integration_const.API_BASE_URL
+API_KEY = integration_const.API_KEY
+MANAGE_LOGIN_ENDPOINT = integration_const.MANAGE_LOGIN_ENDPOINT
+SEARCHING_TEXT = integration_const.SEARCHING_TEXT
+USER_AGENT = integration_const.USER_AGENT
+# Backward-safe fallback in case HA has a stale const.py during update.
+DYNAMIC_MESSAGES_URL = getattr(
+    integration_const,
+    "DYNAMIC_MESSAGES_URL",
+    "https://mybag.aero/baggage/assets/static/common-dynamic-messages/en-gb.json",
+)
