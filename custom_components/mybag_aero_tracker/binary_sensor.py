@@ -41,4 +41,4 @@ class MyBagFoundBinarySensor(CoordinatorEntity[MyBagDataUpdateCoordinator], Bina
     def is_on(self) -> bool:
         """Return whether baggage is considered found."""
         data = self.coordinator.data
-        return data.state == "updated" and not data.is_searching
+        return data.state not in {"searching", "not_found", "error"} and not data.is_searching

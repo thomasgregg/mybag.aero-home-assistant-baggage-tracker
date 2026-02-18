@@ -14,7 +14,10 @@ For each configured baggage file, the integration creates:
 
 `sensor` state values:
 - `searching`
-- `updated`
+- `located`
+- `received`
+- `scheduled_for_delivery`
+- `delivered`
 - `not_found`
 - `error`
 
@@ -168,7 +171,13 @@ cards:
     conditions:
       - condition: state
         entity: sensor.mybag_beros22525_status
-        state: updated
+        state_not: searching
+      - condition: state
+        entity: sensor.mybag_beros22525_status
+        state_not: not_found
+      - condition: state
+        entity: sensor.mybag_beros22525_status
+        state_not: error
     card:
       type: markdown
       content: >-

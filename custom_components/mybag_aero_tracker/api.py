@@ -160,9 +160,15 @@ class MyBagApiClient:
                 if is_searching
                 else status_body or "Good news: baggage status changed."
             )
+            state = self._derive_state(
+                is_searching=is_searching,
+                current_status_text=current_status_text,
+                status_body=status_body,
+                delivery_details=delivery_details,
+            )
 
             return BaggageStatus(
-                state="searching" if is_searching else "updated",
+                state=state,
                 checked_at=datetime.now(UTC),
                 airline=self._airline,
                 reference_number=self._reference_number,
@@ -185,6 +191,36 @@ class MyBagApiClient:
             )
         except Exception as err:
             return self._error_status(f"Check failed: {err}")
+
+    def _derive_state(
+        self,
+        *,
+        is_searching: bool,
+        current_status_text: str | None,
+        status_body: str | None,
+        delivery_details: dict | None,
+    ) -> str:
+        if is_searching:
+            return "searching"
+
+        # Delivery timestamp is the strongest signal for terminal state.
+        if (delivery_details or {}).get("delivered_datetime_local"):
+            return "delivered"
+
+        text = " ".join(
+            [part.strip().upper() for part in [current_status_text or "", status_body or ""] if part and part.strip()]
+        )
+        if "DELIVERED" in text:
+            return "delivered"
+        if "SCHEDULED FOR DELIVERY" in text or "OUT FOR DELIVERY" in text:
+            return "scheduled_for_delivery"
+        if "WE HAVE RECEIVED YOUR BAGGAGE" in text:
+            return "received"
+        if "HAS BEEN LOCATED" in text:
+            return "located"
+
+        # Non-searching but unmatched detailed text.
+        return "located"
 
     def _is_searching_state(self, no_of_bags_updated: int, tracing_statuses: list[str]) -> bool:
         if no_of_bags_updated > 0:
