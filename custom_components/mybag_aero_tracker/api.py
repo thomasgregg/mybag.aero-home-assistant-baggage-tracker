@@ -13,6 +13,7 @@ from .const import (
     AIRLINE_CODES,
     API_BASE_URL,
     API_KEY,
+    DYNAMIC_MESSAGES_URL,
     MANAGE_LOGIN_ENDPOINT,
     SEARCHING_TEXT,
     USER_AGENT,
@@ -36,6 +37,8 @@ class MyBagApiClient:
         self._reference_number = reference_number.strip().upper()
         self._family_name = family_name.strip().upper()
         self._url = url
+        self._bag_status_catalog: dict[str, dict] | None = None
+        self._notification_catalog: dict[str, dict] | None = None
 
     async def async_check_status(self) -> BaggageStatus:
         """Check baggage status via HTTP APIs."""
@@ -132,6 +135,10 @@ class MyBagApiClient:
                 status = item.get("tracingStatus")
                 if isinstance(status, str) and status.strip():
                     tracing_statuses.append(status.strip())
+            primary_tracing_status = tracing_statuses[0] if tracing_statuses else None
+            status_steps, current_status_text, status_body = await self._resolve_status_messages(
+                primary_tracing_status
+            )
 
             no_of_bags_updated = delayed_bags.get("noOfBagsUpdated", 0)
             if not isinstance(no_of_bags_updated, int):
@@ -145,16 +152,20 @@ class MyBagApiClient:
             first_bag = bag_items[0] if bag_items else {}
             bag_title = self._build_bag_title(first_bag)
 
-            headline = SEARCHING_TEXT if is_searching else "BAGGAGE STATUS UPDATED"
+            headline = (
+                SEARCHING_TEXT
+                if is_searching
+                else current_status_text or "BAGGAGE STATUS UPDATED"
+            )
             details = (
                 "Please check back later"
                 if is_searching
-                else "Status changed from SEARCHING FOR YOUR BAGGAGE"
+                else status_body or "Status changed from SEARCHING FOR YOUR BAGGAGE"
             )
             message = (
                 "Still searching for your baggage."
                 if is_searching
-                else "Good news: baggage status changed."
+                else status_body or "Good news: baggage status changed."
             )
 
             return BaggageStatus(
@@ -170,6 +181,10 @@ class MyBagApiClient:
                 headline=headline,
                 details=details,
                 tracing_statuses=tracing_statuses,
+                primary_tracing_status=primary_tracing_status,
+                status_steps=status_steps,
+                current_status_text=current_status_text,
+                status_body=status_body,
                 no_of_bags_updated=no_of_bags_updated,
                 record_status=delayed_record.get("RecordStatus"),
                 raw_excerpt=response_text[:1000],
@@ -183,6 +198,71 @@ class MyBagApiClient:
         if not tracing_statuses:
             return True
         return all(status.startswith("BTS_1") for status in tracing_statuses)
+
+    async def _load_status_catalog(self) -> None:
+        if self._bag_status_catalog is not None and self._notification_catalog is not None:
+            return
+        self._bag_status_catalog = {}
+        self._notification_catalog = {}
+        try:
+            async with self._session.get(DYNAMIC_MESSAGES_URL, headers={"User-Agent": USER_AGENT}) as response:
+                if response.status != 200:
+                    return
+                payload = json.loads(await response.text())
+            dynamic = payload.get("dynamicMessages", {})
+            bag_status = dynamic.get("bag_status", {})
+            notification = dynamic.get("notification_mszs", {})
+            if isinstance(bag_status, dict):
+                self._bag_status_catalog = bag_status
+            if isinstance(notification, dict):
+                self._notification_catalog = notification
+        except Exception:
+            # Keep integration resilient if static message lookup fails.
+            self._bag_status_catalog = {}
+            self._notification_catalog = {}
+
+    async def _resolve_status_messages(self, tracing_status: str | None) -> tuple[list[str] | None, str | None, str | None]:
+        if not tracing_status:
+            return None, None, None
+        await self._load_status_catalog()
+
+        status_entry = (self._bag_status_catalog or {}).get(tracing_status)
+        if not isinstance(status_entry, dict):
+            return None, None, None
+
+        open_heads: list[tuple[int, str]] = []
+        for key, value in status_entry.items():
+            if not (key.startswith("BTS_ACCopen_") and key.endswith("_head")):
+                continue
+            if not isinstance(value, str) or not value.strip():
+                continue
+            match = re.search(r"BTS_ACCopen_(\d+)_head", key)
+            order = int(match.group(1)) if match else 999
+            open_heads.append((order, value.strip()))
+
+        open_heads.sort(key=lambda item: item[0])
+        steps: list[str] = []
+        for _, value in open_heads:
+            if value not in steps:
+                steps.append(value)
+
+        current_status_text = status_entry.get("BTS_ACCclose_head")
+        if isinstance(current_status_text, str):
+            current_status_text = current_status_text.strip() or None
+        else:
+            current_status_text = None
+        if not current_status_text and steps:
+            current_status_text = steps[-1]
+
+        status_body = (
+            ((self._notification_catalog or {}).get(tracing_status, {})).get("delayed", {}).get("body")
+        )
+        if isinstance(status_body, str):
+            status_body = status_body.strip() or None
+        else:
+            status_body = None
+
+        return (steps or None), current_status_text, status_body
 
     def _build_bag_title(self, bag_item: dict) -> str | None:
         seq = bag_item.get("Seq")

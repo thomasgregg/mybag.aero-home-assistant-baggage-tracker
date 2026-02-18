@@ -22,6 +22,10 @@ class BaggageStatus:
     headline: str | None = None
     details: str | None = None
     tracing_statuses: list[str] | None = None
+    primary_tracing_status: str | None = None
+    status_steps: list[str] | None = None
+    current_status_text: str | None = None
+    status_body: str | None = None
     no_of_bags_updated: int | None = None
     record_status: str | None = None
     raw_excerpt: str | None = None
