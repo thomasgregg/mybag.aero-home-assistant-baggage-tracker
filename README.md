@@ -64,7 +64,8 @@ Useful sensor attributes:
 ## Dashboard UI Example
 You can paste this as a manual Lovelace card (`type: vertical-stack`) and adapt entity IDs to your setup.
 
-![Dashboard example](docs/images/ha-dashboard-example-v2.png)
+![Dashboard overview](docs/images/ha-dashboard-main-2026-02-18.png)
+![Delivery details card](docs/images/ha-dashboard-delivery-2026-02-18.png)
 
 ```yaml
 type: vertical-stack
@@ -236,8 +237,14 @@ cards:
         {% if d.get('note') %}
 
         **Please note**  
-
-        {{ d.get('note') }}
+        {% set note_text = d.get('note')
+          | replace('\r\n', ' ')
+          | replace('\n', ' ')
+          | replace('\r', ' ')
+          | replace('  ', ' ')
+          | replace('  ', ' ')
+          | trim %}
+        {{ note_text }}
 
         {% endif %}
 ```
